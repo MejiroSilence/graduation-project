@@ -17,7 +17,7 @@ class trainer(object):
         self.lastObs=None
 
     def calculateQtot(self,n_agents,critic,mixer,obs,state,actions,lastAction):
-        inputs=torch.tensor([torch.cat([actions[:i],actions[i+1:],state,obs[i],lastAction[i]]) for i in range(n_agents)]).detach()
+        inputs=torch.tensor([torch.cat([actions[:i],actions[i+1:],state,obs[i],lastAction[i],i]) for i in range(n_agents)]).detach()
         qs=critic(inputs)
         q=qs.gather(1,actions)
         v=qs.max(1)[0]
@@ -46,7 +46,7 @@ class trainer(object):
         return sum(prob*q)
 
     def actorTrain(self,mac,n_agents,actions,probs,state,obs,lastAction):#TODO:qs
-        inputs=torch.tensor([torch.cat([actions[:i],actions[i+1:],state,obs[i],lastAction[i]]) for i in range(n_agents)])
+        inputs=torch.tensor([torch.cat([actions[:i],actions[i+1:],state,obs[i],lastAction[i],i]) for i in range(n_agents)])
         qs=mac.evalCritic(inputs)
         loss=0
         for i in range(n_agents):

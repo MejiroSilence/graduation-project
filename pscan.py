@@ -16,6 +16,7 @@ args:
     criticLR
     epsilon
     gamma
+    tau
 """
 class pscan(object):
     def __init__(self,args):

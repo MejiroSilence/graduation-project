@@ -4,7 +4,9 @@ import torch
 import numpy as np
 from trainer import trainer
 
-#TODO: detach
+
+print("cuda status: ",torch.cuda.is_available())
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def train(args,epoch,epoch_len,env_args):
     sc_env = StarCraft2Env(**env_args)

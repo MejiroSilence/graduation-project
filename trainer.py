@@ -6,6 +6,7 @@ class trainer(object):
     def __init__(self,mac,args):
         self.mse=nn.MSELoss
         self.criticOpt=torch.optim.Adam(mac.evalCritic.parameters()+mac.evalMixer.parameters(), lr=args.criticLR)
+        self.actorOpt=torch.optim.Adam(mac.agent.parameters(), lr=args.actorLR)
 
     def initLast(self):
         self.lastAction=None
@@ -36,5 +37,21 @@ class trainer(object):
         self.lastState=state
         self.lastObs=obs
         return
+    
+    def counterfactualBaseline(self,prob,q):
+        return sum(prob*q)
+
+    def actorTrain(self,mac,n_agents,actions,probs,state,obs,lastAction):#TODO:qs
+        inputs=torch.tensor([torch.cat([actions[:i],actions[i+1:],state,obs[i],lastAction[i]]) for i in range(n_agents)])
+        qs=mac.evalCritic(inputs)
+        loss=0
+        for i in range(n_agents):
+            a=qs[i][actions[i]]-self.counterfactualBaseline(probs[i],qs[i])
+            loss-=a*torch.log(probs[i][actions[i]])
+        self.actorOpt.zero_grad()
+        loss.backward()
+        self.actorOpt.step()
+        return
+
 
             

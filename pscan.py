@@ -19,7 +19,8 @@ args:
 """
 class pscan(object):
     def __init__(self,args):
-        self.agents = [gruAgent(args.observeDim+1,args.agentHiddenDim,args.actionNum,args.actorLR) for i in range(args.agentNum)]
+        self.n_agents=args.agentNum
+        self.agent = gruAgent(args.observeDim+2,args.agentHiddenDim,args.actionNum,args.actorLR)
         self.evalCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum)
         self.targetCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum)
         self.evalMixer=qscan(args)
@@ -28,6 +29,6 @@ class pscan(object):
         hard_update(self.targetMixer,self.evalMixer)
 
     def initHidden(self):
-        self.hs=[agent.initHidden() for agent in self.agents]
+        self.hs=[self.agent.initHidden() for i in range(self.n_agents)]
 
         

@@ -2,7 +2,7 @@ import torch
 from critic import Qnet
 from mixer import qscan
 from rnnAgent import gruAgent
-from utils import hard_update
+from utils import hardUpdate
 
 class pscan(object):
     def __init__(self,args):
@@ -12,8 +12,8 @@ class pscan(object):
         self.targetCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum)
         self.evalMixer=qscan(args)
         self.targetMixer=qscan(args)
-        hard_update(self.targetCritic,self.evalCritic)
-        hard_update(self.targetMixer,self.evalMixer)
+        hardUpdate(self.targetCritic,self.evalCritic)
+        hardUpdate(self.targetMixer,self.evalMixer)
 
     def initHidden(self):
         self.hs=[self.agent.initHidden() for i in range(self.n_agents)]

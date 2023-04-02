@@ -6,7 +6,7 @@ from trainer import trainer
 
 
 print("cuda status: ",torch.cuda.is_available())
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cuda")
 
 def train(args):
     sc_env = StarCraft2Env()

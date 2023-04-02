@@ -8,12 +8,16 @@ from trainer import trainer
 print("cuda status: ",torch.cuda.is_available())
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-def train(args,epoch,epoch_len,env_args):
-    sc_env = StarCraft2Env(**env_args)
+def train(args):
+    sc_env = StarCraft2Env()
     env_info = sc_env.get_env_info()
+    args.agentNum=env_info.n_agents
+    args.observeDim=env_info.obs_shape
+    args.actionNum=env_info.n_actions
+    args.stateDim=env_info.state_shape
     mac = pscan(args)
     epochTrainer=trainer(mac,args)
-    for epoch_i in range(epoch):
+    for epoch_i in range(args.epoch):
         t=0
         sc_env.reset()
         epochTrainer.initLast()

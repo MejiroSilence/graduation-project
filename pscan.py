@@ -4,20 +4,6 @@ from mixer import qscan
 from rnnAgent import gruAgent
 from utils import hard_update
 
-"""
-args:
-    agentNum
-    observeDim
-    actionNum
-    agentHiddenDim
-    actorLR
-    stateDim
-    criticHiddenDim
-    criticLR
-    epsilon
-    gamma
-    tau
-"""
 class pscan(object):
     def __init__(self,args):
         self.n_agents=args.agentNum

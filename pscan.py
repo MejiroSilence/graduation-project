@@ -1,6 +1,6 @@
 import torch
 from critic import Qnet
-from mixer import qscan
+from mixer import qpair
 from rnnAgent import gruAgent
 from utils import hardUpdate
 
@@ -10,8 +10,8 @@ class pscan(object):
         self.agent = gruAgent(args.observeDim+2,args.agentHiddenDim,args.actionNum,args.actorLR)
         self.evalCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum)
         self.targetCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum)
-        self.evalMixer=qscan(args)
-        self.targetMixer=qscan(args)
+        self.evalMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum)
+        self.targetMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum)
         hardUpdate(self.targetCritic,self.evalCritic)
         hardUpdate(self.targetMixer,self.evalMixer)
 

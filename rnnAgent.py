@@ -10,7 +10,7 @@ class gruAgent(nn.Module):
         self.fc1 = nn.Linear(inputSize, hiddenSize)
         self.gru = nn.GRUCell(hiddenSize, hiddenSize)
         self.fc2 = nn.Linear(hiddenSize, outputSize)
-        self.softmax = nn.Softmax()
+        self.softmax = nn.Softmax(dim=-1)
 
     def initHidden(self):
         return torch.zeros(self.hiddenSize)
@@ -29,6 +29,6 @@ class gruAgent(nn.Module):
         for i in range(len(actionMask)):
             if actionMask[i]:
                 prob[i] =(1-e) * prob[i] + e / availableNum
-        action =  torch.distributions.Categorical(prob)
+        action =  torch.distributions.Categorical(prob).sample().detach()
         return action,prob
         

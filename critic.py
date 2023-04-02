@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 class Qnet(nn.Module):
     def __init__(self,intputSize,hiddenSize,outputSize):
+        super(Qnet, self).__init__()
         self.fc1 = nn.Linear(intputSize, hiddenSize)
         self.fc2=nn.Linear(hiddenSize, hiddenSize)
         self.fc3=nn.Linear(hiddenSize, outputSize)

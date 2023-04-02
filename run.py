@@ -11,10 +11,10 @@ device = torch.device("cuda")
 def train(args):
     sc_env = StarCraft2Env()
     env_info = sc_env.get_env_info()
-    args.agentNum=env_info.n_agents
-    args.observeDim=env_info.obs_shape
-    args.actionNum=env_info.n_actions
-    args.stateDim=env_info.state_shape
+    args.agentNum=env_info["n_agents"]
+    args.observeDim=env_info["obs_shape"]
+    args.actionNum=env_info["n_actions"]
+    args.stateDim=env_info["state_shape"]
     mac = pscan(args)
     epochTrainer=trainer(mac,args)
     for epoch_i in range(args.epoch):
@@ -24,22 +24,22 @@ def train(args):
         terminated = False
         mac.initHidden()
         while not terminated: #TODO: add max step
-            obs = sc_env.get_obs()
-            state=sc_env.get_state()
-            lastAction=torch.zeros(env_info.n_agents)
-            actions=torch.zeros(env_info.n_agents)
+            obs = torch.tensor(np.array(sc_env.get_obs()))
+            state=torch.tensor(sc_env.get_state())
+            lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+            actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
             probs=[]
-            for i in range(env_info.n_agents):
-                q,h=mac.agent(torch.cat([obs[i],lastAction,i]),mac.hs[i])
-                actionMask=sc_env.get_avail_agent_actions(i)
+            for i in range(env_info["n_agents"]):
+                q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i])]),mac.hs[i])
+                actionMask=torch.tensor(sc_env.get_avail_agent_actions(i))
                 action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                 probs.append(prob)
                 mac.hs[i]=h
                 actions[i]=action
             reward, terminated, _ = sc_env.step(actions)
             t+=1
-            epochTrainer.criticTrain(env_info.n_agents,mac,obs,state,actions,lastAction,reward,args.gamma)
-            epochTrainer.actorTrain(mac,env_info.n_agents,actions,probs,state,obs,lastAction)
+            epochTrainer.criticTrain(env_info["n_agents"],mac,obs,state,actions,lastAction,reward,args.gamma)
+            epochTrainer.actorTrain(mac,env_info["n_agents"],actions,probs,state,obs,lastAction)
             lastAction=actions
         sc_env.close()
 

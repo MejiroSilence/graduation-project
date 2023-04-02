@@ -34,7 +34,7 @@ def train(args):
                 actionMask=torch.tensor(sc_env.get_avail_agent_actions(i))
                 action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                 probs.append(prob)
-                mac.hs[i]=h
+                mac.hs[i]=h.detach()
                 actions[i]=action
             reward, terminated, _ = sc_env.step(actions)
             t+=1

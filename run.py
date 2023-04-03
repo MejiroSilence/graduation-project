@@ -3,12 +3,19 @@ from smac.env import StarCraft2Env
 import torch
 import numpy as np
 from trainer import trainer
+import matplotlib.pyplot as plt
+import time
 
 
 print("cuda status: ",torch.cuda.is_available())
 device = torch.device("cuda")
 
 def train(args):
+    #plt
+    localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
+    x=[]
+    y=[]
+
     sc_env = StarCraft2Env()
     env_info = sc_env.get_env_info()
     args.agentNum=env_info["n_agents"]
@@ -23,11 +30,11 @@ def train(args):
         epochTrainer.initLast()
         terminated = False
         mac.initHidden()
-        while not terminated: #TODO: add max step
+        lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+        actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+        while not terminated: 
             obs = torch.tensor(np.array(sc_env.get_obs()))
             state=torch.tensor(sc_env.get_state())
-            lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
-            actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
             probs=[]
             for i in range(env_info["n_agents"]):
                 q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i])]),mac.hs[i])
@@ -42,6 +49,41 @@ def train(args):
             epochTrainer.actorTrain(mac,env_info["n_agents"],actions,probs,state,obs,lastAction)
             lastAction=actions
         sc_env.close()
+
+        #eval every 100 episode
+        if (epoch_i+1)%100==0:
+            with torch.no_grad():
+                for evalEp in range(args.evalEp):
+                    wonCnt=0
+                    sc_env.reset()
+                    terminated = False
+                    mac.initHidden()
+                    lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+                    actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+                    while not terminated:
+                        obs = torch.tensor(np.array(sc_env.get_obs()))
+                        state=torch.tensor(sc_env.get_state())
+                        for i in range(env_info["n_agents"]):
+                            q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i])]),mac.hs[i])
+                            actionMask=torch.tensor(sc_env.get_avail_agent_actions(i))
+                            action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
+                            mac.hs[i]=h
+                            actions[i]=action
+                        reward, terminated, info = sc_env.step(actions)
+                        if info["battle_won"]:
+                            wonCnt+=1
+                            break
+                        lastAction=actions
+                    sc_env.close()
+            wr=wonCnt/args.evalEp
+            print("episode {}: win rate: {}".format(epoch_i+1,wr))
+            x.append(epoch_i)
+            y.append(wr)
+            with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
+                file.write("{}    {}\n".format(epoch_i+1,wr)) 
+    plt.plot(x,y)
+    plt.savefig('./results/pscan{}.jpg'.format(localtime))
+
 
 
 

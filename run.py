@@ -79,7 +79,7 @@ def train(args):
                             wonCnt+=1
                             break
                         lastAction=actions
-                    print("eval episode: {}, steps: {}, total reward: {}".format(epoch_i,t,ep_reward))
+                    print("eval episode: {}, steps: {}, total reward: {}".format(evalEp,t,ep_reward))
                     #sc_env.close()
             wr=wonCnt/args.evalEp
             print("episode {}: win rate: {}".format(epoch_i+1,wr))

@@ -58,6 +58,7 @@ def train(args):
             with torch.no_grad():
                 for evalEp in range(args.evalEp):
                     wonCnt=0
+                    ep_reward=0
                     sc_env.reset()
                     terminated = False
                     mac.initHidden()
@@ -73,10 +74,12 @@ def train(args):
                             mac.hs[i]=h
                             actions[i]=action
                         reward, terminated, info = sc_env.step(actions)
+                        ep_reward+=reward
                         if info["battle_won"]:
                             wonCnt+=1
                             break
                         lastAction=actions
+                    print("eval episode: {}, steps: {}, total reward: {}".format(epoch_i,t,ep_reward))
                     #sc_env.close()
             wr=wonCnt/args.evalEp
             print("episode {}: win rate: {}".format(epoch_i+1,wr))

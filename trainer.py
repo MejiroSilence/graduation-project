@@ -42,6 +42,7 @@ class trainer(object):
             nn.utils.clip_grad_norm_(mac.criticParam,max_norm=10, norm_type=2)
             self.criticOpt.step()
             softUpdate(mac.targetCritic,mac.evalCritic,self.tau)
+            softUpdate(mac.targetMixer,mac.evalMixer,self.tau)
         self.lastAction=lastAction
         self.lastState=state
         self.lastObs=obs

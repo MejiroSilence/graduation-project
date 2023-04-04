@@ -2,6 +2,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+device = torch.device("cuda")
+
 class qpair(nn.Module):
     def __init__(self, stateDim,hiddenSize,agentNum):
         super(qpair, self).__init__()
@@ -16,7 +18,7 @@ class qpair(nn.Module):
         )
 
     def forward(self,state,actions):
-        g=[[self.fc(torch.cat([state,torch.tensor([i]).cuda(),torch.tensor([j]).cuda(),actions[i],actions[j]],0)) for j in range(i+1,self.agentNum)]for i in range(self.agentNum)]
+        g=[[self.fc(torch.cat([state,torch.tensor([i],device=device),torch.tensor([j],device=device),actions[i],actions[j]],0)) for j in range(i+1,self.agentNum)]for i in range(self.agentNum)]
         lambda_=[]
         for i in range(self.agentNum):
             sum=0
@@ -28,7 +30,7 @@ class qpair(nn.Module):
                 else:
                     sum+=g[i][j-i-1][0]
             lambda_.append(sum)
-        lambda_=torch.tensor(lambda_).cuda()
+        lambda_=torch.tensor(lambda_,device=device)
         lambda_=lambda_/torch.mean(lambda_)
         return lambda_
 

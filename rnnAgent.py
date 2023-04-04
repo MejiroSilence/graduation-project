@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+device = torch.device("cuda")
 
 class gruAgent(nn.Module):
     def __init__(self, inputSize, hiddenSize, outputSize, lr):
@@ -13,7 +14,7 @@ class gruAgent(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def initHidden(self):
-        return torch.zeros(self.hiddenSize).cuda()
+        return torch.zeros(self.hiddenSize,device=device)
 
     def forward(self, input, hidden):
         x = F.relu(self.fc1(input))

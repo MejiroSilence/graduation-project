@@ -26,6 +26,7 @@ def train(args):
     epochTrainer=trainer(mac,args)
     for epoch_i in range(args.epoch):
         t=0
+        ep_reward=0
         sc_env.reset()
         epochTrainer.initLast()
         terminated = False
@@ -45,10 +46,12 @@ def train(args):
                 actions[i]=action
             reward, terminated, _ = sc_env.step(actions)
             t+=1
+            ep_reward+=reward
             epochTrainer.criticTrain(env_info["n_agents"],mac,obs,state,actions,lastAction,reward,args.gamma)
             epochTrainer.actorTrain(mac,env_info["n_agents"],actions,probs,state,obs,lastAction)
             lastAction=actions
-        sc_env.close()
+        #sc_env.close()
+        print("episode: {}, steps: {}, total reward: {}".format(epoch_i,t,ep_reward))
 
         #eval every 100 episode
         if (epoch_i+1)%100==0:
@@ -74,7 +77,7 @@ def train(args):
                             wonCnt+=1
                             break
                         lastAction=actions
-                    sc_env.close()
+                    #sc_env.close()
             wr=wonCnt/args.evalEp
             print("episode {}: win rate: {}".format(epoch_i+1,wr))
             x.append(epoch_i)

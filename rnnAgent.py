@@ -13,7 +13,7 @@ class gruAgent(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def initHidden(self):
-        return torch.zeros(self.hiddenSize)
+        return torch.zeros(self.hiddenSize).cuda()
 
     def forward(self, input, hidden):
         x = F.relu(self.fc1(input))

@@ -30,15 +30,15 @@ def train(args):
         epochTrainer.initLast()
         terminated = False
         mac.initHidden()
-        lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
-        actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+        lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).cuda().unsqueeze(-1)
+        actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).cuda().unsqueeze(-1)
         while not terminated: 
-            obs = torch.tensor(np.array(sc_env.get_obs()))
-            state=torch.tensor(sc_env.get_state())
+            obs = torch.tensor(np.array(sc_env.get_obs())).cuda()
+            state=torch.tensor(sc_env.get_state()).cuda()
             probs=[]
             for i in range(env_info["n_agents"]):
-                q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i])]),mac.hs[i])
-                actionMask=torch.tensor(sc_env.get_avail_agent_actions(i))
+                q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i]).cuda()]),mac.hs[i])
+                actionMask=torch.tensor(sc_env.get_avail_agent_actions(i)).cuda()
                 action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                 probs.append(prob)
                 mac.hs[i]=h.detach()
@@ -58,14 +58,14 @@ def train(args):
                     sc_env.reset()
                     terminated = False
                     mac.initHidden()
-                    lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
-                    actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).unsqueeze(-1)
+                    lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64).cuda().unsqueeze(-1)
+                    actions=torch.zeros(env_info["n_agents"],dtype=torch.int64).cuda().unsqueeze(-1)
                     while not terminated:
-                        obs = torch.tensor(np.array(sc_env.get_obs()))
-                        state=torch.tensor(sc_env.get_state())
+                        obs = torch.tensor(np.array(sc_env.get_obs())).cuda()
+                        state=torch.tensor(sc_env.get_state()).cuda()
                         for i in range(env_info["n_agents"]):
-                            q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i])]),mac.hs[i])
-                            actionMask=torch.tensor(sc_env.get_avail_agent_actions(i))
+                            q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i]).cuda()]),mac.hs[i])
+                            actionMask=torch.tensor(sc_env.get_avail_agent_actions(i)).cuda()
                             action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                             mac.hs[i]=h
                             actions[i]=action

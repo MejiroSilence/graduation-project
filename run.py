@@ -1,3 +1,4 @@
+from utils import onehot
 from pscan import pscan
 from smac.env import StarCraft2Env
 import torch
@@ -38,7 +39,7 @@ def train(args):
             state=torch.tensor(sc_env.get_state(),device=device)
             probs=[]
             for i in range(env_info["n_agents"]):
-                q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i],device=device)]),mac.hs[i])
+                q,h=mac.agent(torch.cat([obs[i],onehot(lastAction[i],args.actionNum),onehot(i,args.agentNum)]),mac.hs[i])
                 actionMask=torch.tensor(sc_env.get_avail_agent_actions(i),device=device)
                 action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                 probs.append(prob)
@@ -68,7 +69,7 @@ def train(args):
                         obs = torch.tensor(np.array(sc_env.get_obs()),device=device)
                         state=torch.tensor(sc_env.get_state(),device=device)
                         for i in range(env_info["n_agents"]):
-                            q,h=mac.agent(torch.cat([obs[i],lastAction[i],torch.tensor([i],device=device)]),mac.hs[i])
+                            q,h=mac.agent(torch.cat([obs[i],onehot(lastAction[i],args.actionNum),onehot(i,args.agentNum)]),mac.hs[i])
                             actionMask=torch.tensor(sc_env.get_avail_agent_actions(i),device=device)
                             action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
                             mac.hs[i]=h

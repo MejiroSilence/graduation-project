@@ -1,3 +1,4 @@
+from utils import onehot
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -5,11 +6,12 @@ import torch.nn.functional as F
 device = torch.device("cuda")
 
 class qpair(nn.Module):
-    def __init__(self, stateDim,hiddenSize,agentNum):
+    def __init__(self, stateDim,hiddenSize,agentNum,actionNum):
         super(qpair, self).__init__()
         self.agentNum=agentNum
+        self.actionNum=actionNum
         self.fc=nn.Sequential(
-            nn.Linear(4+stateDim, hiddenSize),
+            nn.Linear(stateDim+2*agentNum+2*actionNum, hiddenSize),
             nn.ReLU(),
             nn.Linear(hiddenSize, hiddenSize),
             nn.ReLU(),
@@ -18,7 +20,7 @@ class qpair(nn.Module):
         )
 
     def forward(self,state,actions):
-        g=[[self.fc(torch.cat([state,torch.tensor([i],device=device),torch.tensor([j],device=device),actions[i],actions[j]],0)) for j in range(i+1,self.agentNum)]for i in range(self.agentNum)]
+        g=[[self.fc(torch.cat([state,onehot(i,self.agentNum),onehot(j,self.agentNum),onehot(actions[i],self.actionNum),onehot(actions[j],self.actionNum)],0)) for j in range(i+1,self.agentNum)]for i in range(self.agentNum)]
         lambda_=[]
         for i in range(self.agentNum):
             sum=0

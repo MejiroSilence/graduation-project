@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from utils import softUpdate
+from utils import softUpdate,onehot
 
 device = torch.device("cuda")
 
@@ -12,6 +12,7 @@ class trainer(object):
         self.criticOpt=torch.optim.Adam(mac.criticParam, lr=args.criticLR)
         self.actorOpt=torch.optim.Adam(mac.actorParam, lr=args.actorLR)
         self.tau=args.tau
+        self.actionNum=args.actionNum
 
     def initLast(self):
         self.lastAction=None
@@ -19,7 +20,7 @@ class trainer(object):
         self.lastObs=None
 
     def calculateQtot(self,n_agents,critic,mixer,obs,state,actions,lastAction,onlyMax=False):
-        inputs=torch.stack([torch.cat([actions[:i].view(-1),actions[i+1:].view(-1),state,obs[i],lastAction[i],torch.tensor([i],device=device)]) for i in range(n_agents)])
+        inputs=self.buildCriticInput(actions,state,obs,lastAction,n_agents)
         qs=critic(inputs)
         v=qs.max(1)[0]
         vTotal=torch.sum(v)
@@ -50,9 +51,12 @@ class trainer(object):
     
     def counterfactualBaseline(self,prob,q):
         return sum(prob*q)
+    
+    def buildCriticInput(self,actions,state,obs,lastAction,n_agents):
+        return torch.stack([torch.cat([torch.cat([onehot(lastAction[j],self.actionNum) if i==j else onehot(actions[j],self.actionNum)  for j in range(n_agents)]),state,obs[i],onehot(i,n_agents)]) for i in range(n_agents)])
 
     def actorTrain(self,mac,n_agents,actions,probs,state,obs,lastAction):
-        inputs=torch.stack([torch.cat([actions[:i].view(-1),actions[i+1:].view(-1),state,obs[i],lastAction[i],torch.tensor([i],device=device)]) for i in range(n_agents)])
+        inputs=self.buildCriticInput(actions,state,obs,lastAction,n_agents)
         qs=mac.evalCritic(inputs)
         loss=0
         for i in range(n_agents):

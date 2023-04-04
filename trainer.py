@@ -7,8 +7,8 @@ from utils import softUpdate
 class trainer(object):
     def __init__(self,mac,args):
         self.mse=nn.MSELoss()
-        self.criticOpt=torch.optim.Adam(list(mac.evalCritic.parameters())+list(mac.evalMixer.parameters()), lr=args.criticLR)
-        self.actorOpt=torch.optim.Adam(mac.agent.parameters(), lr=args.actorLR)
+        self.criticOpt=torch.optim.Adam(mac.criticParam, lr=args.criticLR)
+        self.actorOpt=torch.optim.Adam(mac.actorParam, lr=args.actorLR)
         self.tau=args.tau
 
     def initLast(self):
@@ -35,6 +35,7 @@ class trainer(object):
             loss=self.mse(reward+gamma*qTotal,qTotalLast)
             self.criticOpt.zero_grad()
             loss.backward()
+            nn.utils.clip_grad_norm_(mac.criticParam,max_norm=10, norm_type=2)
             self.criticOpt.step()
             softUpdate(mac.targetCritic,mac.evalCritic,self.tau)
         self.lastAction=lastAction
@@ -54,6 +55,7 @@ class trainer(object):
             loss-=a.detach()*torch.log(probs[i][int(actions[i])])
         self.actorOpt.zero_grad()
         loss.backward()
+        nn.utils.clip_grad_norm_(mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()
         return
 

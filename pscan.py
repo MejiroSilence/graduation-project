@@ -12,6 +12,8 @@ class pscan(object):
         self.targetCritic=Qnet(args.agentNum+args.stateDim+args.observeDim+1,args.criticHiddenDim,args.actionNum).cuda()
         self.evalMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum).cuda()
         self.targetMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum).cuda()
+        self.criticParam=list(self.evalCritic.parameters())+list(self.evalMixer.parameters())
+        self.actorParam=self.agent.parameters()
         hardUpdate(self.targetCritic,self.evalCritic)
         hardUpdate(self.targetMixer,self.evalMixer)
 

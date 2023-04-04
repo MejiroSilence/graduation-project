@@ -12,9 +12,9 @@ class qpair(nn.Module):
         self.actionNum=actionNum
         self.fc=nn.Sequential(
             nn.Linear(stateDim+2*agentNum+2*actionNum, hiddenSize),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(hiddenSize, hiddenSize),
-            nn.ReLU(),
+            nn.LeakyReLU(),
             nn.Linear(hiddenSize, 2),
             nn.Softmax()
         )

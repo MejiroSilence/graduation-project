@@ -10,7 +10,7 @@ class Qnet(nn.Module):
         self.fc3=nn.Linear(hiddenSize, outputSize)
     
     def forward(self, input):
-        x=F.relu(self.fc1(input))
-        x=F.relu(self.fc2(x))
+        x=F.leaky_relu(self.fc1(input))
+        x=F.leaky_relu(self.fc2(x))
         x=self.fc3(x)
         return x

@@ -17,7 +17,7 @@ class gruAgent(nn.Module):
         return torch.zeros(self.hiddenSize,device=device)
 
     def forward(self, input, hidden):
-        x = F.relu(self.fc1(input))
+        x = F.leaky_relu(self.fc1(input))
         h = self.gru(x, hidden)
         q = self.fc2(h)
         return q, h

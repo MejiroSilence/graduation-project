@@ -45,7 +45,7 @@ def train(args):
                 probs.append(prob)
                 mac.hs[i]=h.detach()
                 actions[i]=action
-            reward, terminated, _ = sc_env.step(actions)
+            reward, terminated, info = sc_env.step(actions)
             t+=1
             ep_reward+=reward
             epochTrainer.criticTrain(env_info["n_agents"],mac,obs,state,actions,lastAction,reward,args.gamma)
@@ -76,11 +76,14 @@ def train(args):
                             actions[i]=action
                         reward, terminated, info = sc_env.step(actions)
                         ep_reward+=reward
-                        if info["battle_won"]:
-                            wonCnt+=1
-                            break
+                        if "battle_won" in info:
+                            if info["battle_won"]:
+                                wonCnt+=1
+                                break
+                        else:
+                            info["battle_won"]=False
                         lastAction=actions
-                    print("eval episode: {}, steps: {}, total reward: {}".format(evalEp,t,ep_reward))
+                    print("eval episode: {}, steps: {}, total reward: {}, won: {}".format(evalEp,t,ep_reward,info["battle_won"]))
                     #sc_env.close()
             wr=wonCnt/args.evalEp
             print("episode {}: win rate: {}".format(epoch_i+1,wr))

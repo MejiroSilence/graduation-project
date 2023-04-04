@@ -37,7 +37,7 @@ class trainer(object):
         if self.lastState is not None:
             qTotal=self.calculateQtot(n_agents,mac.targetCritic,mac.targetMixer,obs,state,actions,lastAction,True).detach()
             qTotalLast=self.calculateQtot(n_agents,mac.evalCritic,mac.evalMixer,self.lastObs,self.lastState,lastAction,self.lastAction)
-            loss=self.mse(reward+gamma*qTotal,qTotalLast)
+            loss=self.mse(10*reward+gamma*qTotal,qTotalLast)
             self.criticOpt.zero_grad()
             loss.backward()
             nn.utils.clip_grad_norm_(mac.criticParam,max_norm=10, norm_type=2)

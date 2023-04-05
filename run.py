@@ -57,8 +57,8 @@ def train(args):
         #eval every 100 episode
         if (epoch_i+1)%100==0:
             with torch.no_grad():
+                wonCnt=0
                 for evalEp in range(args.evalEp):
-                    wonCnt=0
                     ep_reward=0
                     sc_env.reset()
                     terminated = False

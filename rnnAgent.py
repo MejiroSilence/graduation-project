@@ -32,4 +32,13 @@ class gruAgent(nn.Module):
                 prob[i] =(1-e) * prob[i] + e / availableNum
         action =  torch.distributions.Categorical(prob).sample().detach()
         return action,prob
+    
+    def forward(self,batch,t,h):
+        self.buildInput(batch,t)
+    
+    def chooseActions(self,batch,t,e,h):
+        prob=self.forward(batch,t,h)
+            
         
+    def buildInput(self,batch,t):
+        pass

@@ -1,6 +1,7 @@
 from utils import onehot
 from pscan import pscan
 from smac.env import StarCraft2Env
+from buffer import buffer
 import torch
 import numpy as np
 from trainer import trainer
@@ -24,35 +25,39 @@ def train(args):
     args.actionNum=env_info["n_actions"]
     args.stateDim=env_info["state_shape"]
     mac = pscan(args)
-    epochTrainer=trainer(mac,args)
-    for epoch_i in range(args.epoch):
-        t=0
-        ep_reward=0
-        sc_env.reset()
-        epochTrainer.initLast()
-        terminated = False
-        mac.initHidden()
-        lastAction=torch.zeros(env_info["n_agents"],dtype=torch.int64,device=device).unsqueeze(-1)
-        actions=torch.zeros(env_info["n_agents"],dtype=torch.int64,device=device).unsqueeze(-1)
-        while not terminated: 
-            obs = torch.tensor(np.array(sc_env.get_obs()),device=device)
-            state=torch.tensor(sc_env.get_state(),device=device)
-            probs=[]
-            for i in range(env_info["n_agents"]):
-                q,h=mac.agent(torch.cat([obs[i],onehot(lastAction[i],args.actionNum),onehot(i,args.agentNum)]),mac.hs[i])
-                actionMask=torch.tensor(sc_env.get_avail_agent_actions(i),device=device)
-                action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
-                probs.append(prob)
-                mac.hs[i]=h.detach()
-                actions[i]=action
-            reward, terminated, info = sc_env.step(actions)
-            t+=1
-            ep_reward+=reward
-            epochTrainer.criticTrain(env_info["n_agents"],mac,obs,state,actions,lastAction,reward,args.gamma)
-            epochTrainer.actorTrain(mac,env_info["n_agents"],actions,probs,state,obs,lastAction)
-            lastAction=actions
-        #sc_env.close()
-        print("episode: {}, steps: {}, total reward: {}".format(epoch_i,t,ep_reward))
+    buf=buffer(args.batchSize,args)
+    #epochTrainer=trainer(mac,args)
+    epoch_i=0
+    while epoch_i<args.epoch:
+        with torch.no_grad():
+            for episode_i in range(args.epochEpisodes):
+                t=0
+                ep_reward=0
+                sc_env.reset()
+                terminated = False
+                mac.initHidden()
+                episode=buffer(1,args)
+                while not terminated: 
+                    episode.data.obs[0,t] = torch.tensor(np.array(sc_env.get_obs()),device=device)
+                    episode.data.state[0,t]=torch.tensor(sc_env.get_state(),device=device)
+                    episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
+                    for i in range(env_info["n_agents"]):
+                        q,h=mac.agent(torch.cat([obs[i],onehot(lastAction[i],args.actionNum),onehot(i,args.agentNum)]),mac.hs[i])
+                        actionMask=torch.tensor(sc_env.get_avail_agent_actions(i),device=device)
+                        action,prob=mac.agent.chooseAction(q,actionMask,args.epsilon)
+                        mac.hs[i]=h.detach()
+                        actions[i]=action
+                    input=
+                    
+
+                    reward, terminated, info = sc_env.step(actions)
+                    t+=1
+                    ep_reward+=reward
+                    #epochTrainer.criticTrain(env_info["n_agents"],mac,obs,state,actions,lastAction,reward,args.gamma)
+                    #epochTrainer.actorTrain(mac,env_info["n_agents"],actions,probs,state,obs,lastAction)
+                    lastAction=actions
+                #sc_env.close()
+                print("episode: {}, steps: {}, total reward: {}".format(epoch_i,t,ep_reward))
 
         #eval every 100 episode
         if (epoch_i+1)%100==0:

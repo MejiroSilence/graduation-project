@@ -67,6 +67,18 @@ class trainer(object):
         nn.utils.clip_grad_norm_(mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()
         return
+    
+    def criticTrain(self,batch,mac):
+
+    
+    def train(batch):
+        bs = batch.batcdSize
+        rewards=batch.data.rewards
+        actions=batch.data.actions
+        terminated=batch.data.terminated.float()
+        mask=batch.data.mask.float()
+        mask[:, 1:] = mask[:, 1:] * (1 - terminated[:, :-1])
+        availableActions=batch.data.availableActions
 
 
             

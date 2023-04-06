@@ -14,31 +14,15 @@ class gruAgent(nn.Module):
         self.softmax = nn.Softmax(dim=-1)
 
     def initHidden(self):
-        return torch.zeros(self.hiddenSize,device=device)
+    # make hidden states on same device as model
+        return self.fc1.weight.new(1, self.hiddenSize).zero_()
 
-    def forward(self, input, hidden):
-        x = F.leaky_relu(self.fc1(input))
-        h = self.gru(x, hidden)
-        q = self.fc2(h)
-        return q, h
-
-    def chooseAction(self, q, actionMask,e):
-        prob = self.softmax(q)
-        prob = prob * actionMask
-        prob = prob / torch.sum(prob)
-        availableNum = sum(actionMask)
-        for i in range(len(actionMask)):
-            if actionMask[i]:
-                prob[i] =(1-e) * prob[i] + e / availableNum
-        action =  torch.distributions.Categorical(prob).sample().detach()
-        return action,prob
-    
-    def forward(self,batch,t,h):
-        self.buildInput(batch,t)
-    
-    def chooseActions(self,batch,t,e,h):
-        prob=self.forward(batch,t,h)
-            
+    def forward(self, inputs, hidden_state=None):
+        b, a, e = inputs.size()
         
-    def buildInput(self,batch,t):
-        pass
+        x = F.leaky_relu(self.fc1(inputs.view(-1, e)), inplace=True)
+        if hidden_state is not None:
+            hidden_state = hidden_state.reshape(-1, self.hiddenSize)
+        h = self.gru(x, hidden_state)
+        q = self.fc2(h)
+        return q.view(b, a, -1), h.view(b, a, -1)

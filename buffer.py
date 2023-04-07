@@ -12,6 +12,7 @@ class buffer(object):
         self.episodesInBuffer=0
         self.max_seq_length=0
         self.args=args
+        self.device=device
         self.data.rewards=torch.zeros((self.batchSize,args.maxSteps,1),device=device)
         self.data.states=torch.zeros((self.batchSize,args.maxSteps,args.stateDim),device=device)
         self.data.obs=torch.zeros((self.batchSize,args.maxSteps,args.agentNum,args.observeDim),device=device)

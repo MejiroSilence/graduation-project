@@ -17,7 +17,7 @@ class qpair(nn.Module):
             nn.Linear(hiddenSize, hiddenSize),
             nn.LeakyReLU(),
             nn.Linear(hiddenSize, 2),
-            nn.Softmax()
+            nn.Softmax(dim=-1)
         )
         self.comb=torch.tensor(list(combinations([i for i in range(agentNum)],2)),device=device)
         self.comb0=self.comb[:,0].unsqueeze(-1)

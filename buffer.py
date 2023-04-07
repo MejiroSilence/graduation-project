@@ -13,14 +13,14 @@ class buffer(object):
         self.max_seq_length=0
         self.args=args
         self.device=device
-        self.data.rewards=torch.zeros((self.batchSize,args.maxSteps,1),device=device)
-        self.data.states=torch.zeros((self.batchSize,args.maxSteps,args.stateDim),device=device)
-        self.data.obs=torch.zeros((self.batchSize,args.maxSteps,args.agentNum,args.observeDim),device=device)
-        self.data.actions=torch.zeros((self.batchSize,args.maxSteps,args.agentNum,1),device=device)
-        self.data.availableActions=torch.zeros((self.batchSize,args.maxSteps,args.agentNum,args.actionNum),device=device)
-        self.data.actionsOnehot=torch.zeros((self.batchSize,args.maxSteps,args.agentNum,args.actionNum),device=device)
-        self.data.terminated=torch.zeros((self.batchSize,args.maxSteps),device=device)
-        self.data.mask=torch.zeros((self.batchSize,args.maxSteps),device=device)
+        self.data.rewards=torch.zeros((self.batchSize,args.maxSteps+1),device=device)
+        self.data.states=torch.zeros((self.batchSize,args.maxSteps+1,args.stateDim),device=device)
+        self.data.obs=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum,args.observeDim),device=device)
+        self.data.actions=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum),device=device,dtype=torch.long)
+        self.data.availableActions=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum,args.actionNum),device=device)
+        self.data.actionsOnehot=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum,args.actionNum),device=device)
+        self.data.terminated=torch.zeros((self.batchSize,args.maxSteps+1),device=device,dtype=torch.uint8)
+        self.data.mask=torch.zeros((self.batchSize,args.maxSteps+1),device=device)
 
     def addEpisode(self,episode):
         self.data.rewards[self.index]=episode.data.rewards[0]
@@ -63,7 +63,7 @@ class buffer(object):
             sampledData.data.terminated=self.data.terminated[index]
             sampledData.data.mask=self.data.mask[index]
 
-        sampledData.max_seq_length=sampledData.max_t_filled()
+        sampledData.max_seq_length=int(sampledData.max_t_filled())
         
         sampledData.data.rewards=sampledData.data.rewards[:,:sampledData.max_seq_length]
         sampledData.data.states=sampledData.data.states[:,:sampledData.max_seq_length]

@@ -19,10 +19,10 @@ class qpair(nn.Module):
             nn.Linear(hiddenSize, 2),
             nn.Softmax()
         )
-        self.comb=torch.tensor(list(combinations([i for i in range(agentNum)],2)))
-        self.comb0=self.comb[:0].unsqueeze(-1)
-        self.comb1=self.comb[:1].unsqueeze(-1)
-        self.combSize=agentNum*(agentNum-1)/2
+        self.comb=torch.tensor(list(combinations([i for i in range(agentNum)],2)),device=device)
+        self.comb0=self.comb[:,0].unsqueeze(-1)
+        self.comb1=self.comb[:,1].unsqueeze(-1)
+        self.combSize=int(agentNum*(agentNum-1)/2)
     
     def forward(self,batch,t=None):
         inputs=self.buildInput(batch,t)
@@ -33,9 +33,9 @@ class qpair(nn.Module):
                 if i==j:
                     continue
                 if i<j:
-                    lambda_[:,:,i]+=outs[:,:,(2*self.agentNum-1-i)*i/2+j-i-1,0]
+                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-i)*i/2+j-i-1),0]
                 else:
-                    lambda_[:,:,i]+=outs[:,:,(2*self.agentNum-1-j)*j/2+i-j-1,1]
+                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-j)*j/2+i-j-1),1]
         lambda_=lambda_*2/(self.agentNum-1)
         return lambda_
 
@@ -48,16 +48,16 @@ class qpair(nn.Module):
         #state
         inputs.append(batch.data.states[:, ts].unsqueeze(2).repeat(1, 1, self.combSize, 1))
         #agent
-        agent1 = self.comb1.new(*self.comb1.shape[:-1], self.agentNum).zero_()
-        agent1.scatter_(-1, self.comb1.long(), 1)
+        agent1 = self.comb0.new(*self.comb0.shape[:-1], self.agentNum).zero_()
+        agent1.scatter_(-1, self.comb0.long(), 1)
         inputs.append(agent1.unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
-        agent2 = self.comb2.new(*self.comb2.shape[:-1], self.agentNum).zero_()
-        agent2.scatter_(-1, self.comb2.long(), 1)
+        agent2 = self.comb1.new(*self.comb1.shape[:-1], self.agentNum).zero_()
+        agent2.scatter_(-1, self.comb1.long(), 1)
         inputs.append(agent2.unsqueeze(0).unsqueeze(0).expand(bs, max_t, -1, -1))
         #action 
         actions=batch.data.actionsOnehot[:,ts]
-        actions1=actions.index_select(dim=2,index=self.comb1.squeeze())
-        actions2=actions.index_select(dim=2,index=self.comb2.squeeze())
+        actions1=actions.index_select(dim=2,index=self.comb0.squeeze())
+        actions2=actions.index_select(dim=2,index=self.comb1.squeeze())
         inputs.append(actions1)
         inputs.append(actions2)
 

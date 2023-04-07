@@ -24,20 +24,12 @@ class pscan(object):
     def chooseActions(self,batch,t,e):
         probs=self.forward(batch,t)
         availableActions=batch.data.availableActions[:,t]
-        #debug
-        print(availableActions.size())
-        print(probs.size())
-        input()
         probs=probs*availableActions
         probs=probs/(torch.sum(probs,dim=-1,keepdim=True)+ 1e-8)
         actionsNum = (availableActions.sum(-1, keepdim=True) + 1e-8)
         probs=(1-e)*probs+e/actionsNum*availableActions
 
         pickedActions = torch.distributions.Categorical(probs).sample().long()
-
-        print("actions size")
-        print(pickedActions.size())
-        input()
 
         return pickedActions
 

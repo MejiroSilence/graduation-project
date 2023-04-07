@@ -9,14 +9,14 @@ class Qnet(nn.Module):
         self.fc2=nn.Linear(hiddenSize, hiddenSize)
         self.fc3=nn.Linear(hiddenSize, outputSize)
     
-    def forward(self, batch,n_agents, t=None):
-        inputs = self._build_inputs(batch, n_agents,t=t)
+    def forward(self, batch,n_agents,n_actions, t=None):
+        inputs = self._build_inputs(batch, n_agents,n_actions,t=t)
         x = F.leaky_relu(self.fc1(inputs))
         x = F.leaky_relu(self.fc2(x))
         q = self.fc3(x)
         return q
 
-    def _build_inputs(self, batch,n_agents, t=None):
+    def _build_inputs(self, batch,n_agents,n_actions, t=None):
         bs = batch.batchSize
         max_t = batch.max_seq_length if t is None else 1
         ts = slice(None) if t is None else slice(t, t+1)
@@ -30,7 +30,7 @@ class Qnet(nn.Module):
         # actions (masked out by agent)
         actions = batch.data.actionsOnehot[:, ts].view(bs, max_t, 1, -1).repeat(1, 1, n_agents, 1)
         agent_mask = (1 - torch.eye(n_agents, device=batch.device))
-        agent_mask = agent_mask.view(-1, 1).repeat(1, self.n_actions).view(n_agents, -1)
+        agent_mask = agent_mask.view(-1, 1).repeat(1, n_actions).view(n_agents, -1)
         inputs.append(actions * agent_mask.unsqueeze(0).unsqueeze(0))
 
         # last actions

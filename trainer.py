@@ -56,7 +56,7 @@ class trainer(object):
             q_t = self.evalCritic(batch,self.n_agents,self.actionNum, t)
             q_vals[:, t] = q_t.view(bs, self.n_agents, self.actionNum)
             lambda_t=self.evalMixer(batch,t)
-            evalQTot=self.getQtotal(q_t,actions[:,t].unsqueeze(1),lambda_t)
+            evalQTot=self.getQtotal(q_t,actions[:,t].unsqueeze(1),lambda_t).reshape(-1)
 
             targets_t = targets[:, t]
 

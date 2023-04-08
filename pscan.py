@@ -2,7 +2,7 @@ import torch
 from critic import Qnet
 from mixer import qpair
 from rnnAgent import gruAgent
-from utils import hardUpdate
+import numpy as np
 
 class pscan(object):
     def __init__(self,args):
@@ -17,7 +17,7 @@ class pscan(object):
         inputs=self.buildInput(batch,t)
         q, self.hs = self.agent(inputs, self.hs)
 
-        q = q/max(q.max(),abs(q.min()))
+        #q = q/max(q.max(),abs(q.min()))
 
         q = torch.nn.functional.softmax(q, dim=-1)
             
@@ -26,12 +26,11 @@ class pscan(object):
     def chooseActions(self,batch,t,e):
         probs=self.forward(batch,t)
         availableActions=batch.data.availableActions[:,t]
-        probs=probs*availableActions
-        probs=probs/(torch.sum(probs,dim=-1,keepdim=True)+ 1e-8)
-        actionsNum = (availableActions.sum(-1, keepdim=True) + 1e-8)
-        probs=(1-e)*probs+e/actionsNum*availableActions
-
-        pickedActions = torch.distributions.Categorical(probs).sample().long()
+        if np.random.uniform() > e:
+            probs=probs*availableActions
+            pickedActions = torch.distributions.Categorical(probs).sample().long()
+        else:
+            pickedActions=torch.distributions.Categorical(availableActions).sample().long()
 
         return pickedActions
 

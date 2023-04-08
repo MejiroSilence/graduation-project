@@ -45,11 +45,12 @@ def train(args):
                 episode.data.availableActions[0,0]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                 episode.data.mask[0,0]=1
                 while not terminated: 
-                    actions=mac.chooseActions(episode,t,t_env)
+                    actions,probs=mac.chooseActions(episode,t,t_env)
                     reward, terminated, info = sc_env.step(actions.reshape(-1))
                     episode.data.actions[0,t]=actions
                     episode.data.actionsOnehot[0,t]=oneHotTransform(actions.reshape(-1,1),args.actionNum)
                     episode.data.rewards[0,t]=reward
+                    episode.data.probs[0,t]=probs
                     ep_reward+=reward
                     envTerminated=False
                     if terminated and not info.get("episode_limit", False):

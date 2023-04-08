@@ -21,6 +21,7 @@ class buffer(object):
         self.data.actionsOnehot=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum,args.actionNum),device=device)
         self.data.terminated=torch.zeros((self.batchSize,args.maxSteps+1),device=device,dtype=torch.uint8)
         self.data.mask=torch.zeros((self.batchSize,args.maxSteps+1),device=device)
+        self.data.probs=torch.zeros((self.batchSize,args.maxSteps+1,args.agentNum),device=device)
 
     def addEpisode(self,episode):
         self.data.rewards[self.index]=episode.data.rewards[0]
@@ -31,6 +32,7 @@ class buffer(object):
         self.data.actionsOnehot[self.index]=episode.data.actionsOnehot[0]
         self.data.terminated[self.index]=episode.data.terminated[0]
         self.data.mask[self.index]=episode.data.mask[0]
+        self.data.probs[self.index]=episode.data.probs[0]
         self.index+=1
         if self.index == self.batchSize:
             self.index=0
@@ -51,6 +53,7 @@ class buffer(object):
             sampledData.data.actionsOnehot=self.data.actionsOnehot[:batchSize]
             sampledData.data.terminated=self.data.terminated[:batchSize]
             sampledData.data.mask=self.data.mask[:batchSize]
+            sampledData.data.probs=self.data.probs[:batchSize]
         else:
             # Uniform sampling only atm
             index = np.random.choice(self.episodesInBuffer, batchSize, replace=False)
@@ -62,6 +65,7 @@ class buffer(object):
             sampledData.data.actionsOnehot=self.data.actionsOnehot[index]
             sampledData.data.terminated=self.data.terminated[index]
             sampledData.data.mask=self.data.mask[index]
+            sampledData.data.probs=self.data.probs[index]
 
         sampledData.max_seq_length=int(sampledData.max_t_filled())
         
@@ -73,6 +77,7 @@ class buffer(object):
         sampledData.data.actionsOnehot=sampledData.data.actionsOnehot[:,:sampledData.max_seq_length]
         sampledData.data.terminated=sampledData.data.terminated[:,:sampledData.max_seq_length]
         sampledData.data.mask=sampledData.data.mask[:,:sampledData.max_seq_length]
+        sampledData.data.probs=sampledData.data.probs[:,:sampledData.max_seq_length]
 
         return sampledData
 

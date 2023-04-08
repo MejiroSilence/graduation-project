@@ -84,6 +84,8 @@ class trainer(object):
         availableActions=batch.data.availableActions[:,:-1]
         critic_mask = mask.clone()
         mask = mask.repeat(1, 1, self.n_agents).view(-1)
+        oldprobs = batch.data.probs[:,:-1]
+        oldprobs=oldprobs[critic_mask!=0].reshape(-1)
 
         q_vals = self._train_critic(batch, rewards, terminated, actions,critic_mask, bs)
 
@@ -116,7 +118,13 @@ class trainer(object):
 
         advantages = (q_taken - baseline).detach()
 
-        coma_loss = - (advantages * log_pi_taken).sum() / mask.sum()
+        probRatio = pi_taken/oldprobs
+        weightedAdvantages=advantages*probRatio
+        weightedClippedProbs=torch.clamp(probRatio,1-self.args.clip,1+self.args.clip)*advantages
+
+        loss=-torch.min(weightedAdvantages,weightedClippedProbs).mean()
+
+        #coma_loss = - (advantages * log_pi_taken).sum() / mask.sum()
 
         #dist_entropy = torch.distributions.Categorical(pi).entropy().view(-1)
         #dist_entropy[mask == 0] = 0 # fill nan
@@ -124,7 +132,7 @@ class trainer(object):
 
         # Optimise agents
         self.actorOpt.zero_grad()
-        loss = coma_loss #- self.args.entropy * entropy_loss
+        #loss = coma_loss #- self.args.entropy * entropy_loss
         loss.backward()
         nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()

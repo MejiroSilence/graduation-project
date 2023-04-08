@@ -26,16 +26,17 @@ class pscan(object):
         return q.view(batch.batchSize, self.n_agents, -1)
 
     def chooseActions(self,batch,t,t_env):
+        probs=self.forward(batch,t)
         availableActions=batch.data.availableActions[:,t]
+        probs=probs*availableActions
+        probs=probs/probs.sum(dim=-1,keepdim=True)
         e=self.epi_scheduler.eval(t_env)
         if np.random.uniform() > e:
-            probs=self.forward(batch,t)
-            probs=probs*availableActions
             pickedActions = torch.distributions.Categorical(probs).sample().long()
         else:
             pickedActions=torch.distributions.Categorical(availableActions).sample().long()
 
-        return pickedActions
+        return pickedActions,probs.gather(-1,pickedActions.unsqueeze(-1)).squeeze(-1)
 
         
     def buildInput(self,batch,t):

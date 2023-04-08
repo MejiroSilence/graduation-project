@@ -22,5 +22,6 @@ if __name__ == '__main__':
     parser.add_argument('--startE',default=0.5,type=float)
     parser.add_argument('--finishE',default=0.01,type=float)
     parser.add_argument('--epsilonAnnealTime',default=100000,type=int)
+    parser.add_argument('--clip',default=0.2,type=float)
     args=parser.parse_args()
     train(args)

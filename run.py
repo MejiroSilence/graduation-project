@@ -7,14 +7,21 @@ import numpy as np
 from trainer import trainer
 import matplotlib.pyplot as plt
 import time
+import random
+import sys
 
 
 print("cuda status: ",torch.cuda.is_available())
 device = torch.device("cuda")
+seed=random.randint(0,sys.maxsize)
+random.seed(seed)
+torch.cuda.manual_seed_all(seed)
 
 def train(args):
     #plt
-    localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime()) 
+    localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
+    with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
+        file.write("seed: {}\n".format(seed)) 
     x=[]
     y=[]
 

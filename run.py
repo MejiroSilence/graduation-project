@@ -29,6 +29,7 @@ def train(args):
     buf=buffer(args.batchSize,args)
     epochTrainer=trainer(mac,args)
     epoch_i=0
+    t_env=0
     while epoch_i<args.epoch:
         winCnt=0
         with torch.no_grad():
@@ -44,7 +45,7 @@ def train(args):
                 episode.data.availableActions[0,0]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                 episode.data.mask[0,0]=1
                 while not terminated: 
-                    actions=mac.chooseActions(episode,t,args.epsilon)
+                    actions=mac.chooseActions(episode,t,t_env)
                     reward, terminated, info = sc_env.step(actions.reshape(-1))
                     episode.data.actions[0,t]=actions
                     episode.data.actionsOnehot[0,t]=oneHotTransform(actions.reshape(-1,1),args.actionNum)
@@ -64,6 +65,7 @@ def train(args):
                 if info.get("battle_won", False):
                     winCnt+=1
                     won=True
+                t_env+=t
                 print("episode: {}, steps: {}, total reward: {}, won: {}".format(epoch_i+episode_i,t,ep_reward,won))
         epoch_i+=args.epochEpisodes
         train=buf.canSample(args.sampleSize)

@@ -19,5 +19,8 @@ if __name__ == '__main__':
     parser.add_argument('--sampleSize',default=64,type=int)
     parser.add_argument('--entropy',default=0.09,type=float)
     parser.add_argument('--td_lambda',default=0.6,type=float)
+    parser.add_argument('--startE',default=0.5,type=float)
+    parser.add_argument('--finishE',default=0.01,type=float)
+    parser.add_argument('--epsilonAnnealTime',default=100000,type=int)
     args=parser.parse_args()
     train(args)

@@ -3,12 +3,14 @@ from critic import Qnet
 from mixer import qpair
 from rnnAgent import gruAgent
 import numpy as np
+from epsilon_schedules import DecayThenFlatSchedule
 
 class pscan(object):
     def __init__(self,args):
         self.n_agents=args.agentNum
         self.agent = gruAgent(args.observeDim+args.agentNum+args.actionNum,args.agentHiddenDim,args.actionNum,args.actorLR).cuda()
         self.actorParam=self.agent.parameters()
+        self.epi_scheduler= DecayThenFlatSchedule(args.startE,args.finishE,args.epsilonAnnealTime,decay="linear")
 
     def initHidden(self,batchSize):
         self.hs=self.agent.initHidden().unsqueeze(0).expand(batchSize, self.n_agents, -1)
@@ -23,9 +25,10 @@ class pscan(object):
             
         return q.view(batch.batchSize, self.n_agents, -1)
 
-    def chooseActions(self,batch,t,e):
+    def chooseActions(self,batch,t,t_env):
         probs=self.forward(batch,t)
         availableActions=batch.data.availableActions[:,t]
+        e=self.epi_scheduler.eval(t_env)
         if np.random.uniform() > e:
             probs=probs*availableActions
             pickedActions = torch.distributions.Categorical(probs).sample().long()

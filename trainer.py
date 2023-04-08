@@ -118,13 +118,13 @@ class trainer(object):
 
         coma_loss = - (advantages * log_pi_taken).sum() / mask.sum()
 
-        dist_entropy = torch.distributions.Categorical(pi).entropy().view(-1)
+        #dist_entropy = torch.distributions.Categorical(pi).entropy().view(-1)
         #dist_entropy[mask == 0] = 0 # fill nan
-        entropy_loss = dist_entropy.sum() / mask.sum()
+        #entropy_loss = dist_entropy.sum() / mask.sum()
 
         # Optimise agents
         self.actorOpt.zero_grad()
-        loss = coma_loss - self.args.entropy * entropy_loss
+        loss = coma_loss #- self.args.entropy * entropy_loss
         loss.backward()
         nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()

@@ -11,7 +11,6 @@ class gruAgent(nn.Module):
         self.fc1 = nn.Linear(inputSize, hiddenSize)
         self.gru = nn.GRUCell(hiddenSize, hiddenSize)
         self.fc2 = nn.Linear(hiddenSize, outputSize)
-        self.softmax = nn.Softmax(dim=-1)
 
     def initHidden(self):
     # make hidden states on same device as model

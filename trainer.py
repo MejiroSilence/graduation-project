@@ -97,8 +97,12 @@ class trainer(object):
 
         # Mask out unavailable actions, renormalise (as in action selection)
         mac_out[availableActions == 0] = 0
-        mac_out = mac_out/mac_out.sum(dim=-1, keepdim=True)
-
+        #mac_out = mac_out/mac_out.sum(dim=-1, keepdim=True)
+        #availableActions=availableActions.reshape(-1,self.actionNum)
+        maskedMacOut=mac_out[critic_mask!=0]
+        mac_out = maskedMacOut/maskedMacOut.sum(dim=-1, keepdim=True)
+        q_vals=q_vals[critic_mask!=0]
+        actions=actions[[critic_mask!=0]]
         # Calculated baseline
         q_vals = q_vals.reshape(-1, self.actionNum)
         pi = mac_out.view(-1, self.actionNum)
@@ -107,16 +111,20 @@ class trainer(object):
         # Calculate policy grad with mask
         q_taken = torch.gather(q_vals, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
         pi_taken = torch.gather(pi, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
-        pi_taken[mask == 0] = 1.0
+        #pi_taken[mask == 0] = 1.0
         log_pi_taken = torch.log(pi_taken)
 
         advantages = (q_taken - baseline).detach()
 
-        coma_loss = - ((advantages * log_pi_taken) * mask).sum() / mask.sum()
+        coma_loss = - (advantages * log_pi_taken).sum() / mask.sum()
+
+        dist_entropy = torch.distributions.Categorical(pi).entropy().view(-1)
+        #dist_entropy[mask == 0] = 0 # fill nan
+        entropy_loss = dist_entropy.sum() / mask.sum()
 
         # Optimise agents
         self.actorOpt.zero_grad()
-        loss = coma_loss 
+        loss = coma_loss - self.args.entropy * entropy_loss
         loss.backward()
         nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()

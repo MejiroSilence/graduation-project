@@ -17,6 +17,8 @@ class pscan(object):
         inputs=self.buildInput(batch,t)
         q, self.hs = self.agent(inputs, self.hs)
 
+        q = q/max(q.max(),abs(q.min()))
+
         q = torch.nn.functional.softmax(q, dim=-1)
             
         return q.view(batch.batchSize, self.n_agents, -1)

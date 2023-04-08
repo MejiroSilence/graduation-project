@@ -39,22 +39,26 @@ def train(args):
                 terminated = False
                 mac.initHidden(1)
                 episode=buffer(1,args)
+                episode.data.obs[0,0] = torch.tensor(np.array(sc_env.get_obs()),device=device)
+                episode.data.states[0,0]=torch.tensor(sc_env.get_state(),device=device)
+                episode.data.availableActions[0,0]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
+                episode.data.mask[0,0]=1
                 while not terminated: 
-                    episode.data.obs[0,t] = torch.tensor(np.array(sc_env.get_obs()),device=device)
-                    episode.data.states[0,t]=torch.tensor(sc_env.get_state(),device=device)
-                    episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                     actions=mac.chooseActions(episode,t,args.epsilon)
                     reward, terminated, info = sc_env.step(actions.reshape(-1))
                     episode.data.actions[0,t]=actions
                     episode.data.actionsOnehot[0,t]=oneHotTransform(actions.reshape(-1,1),args.actionNum)
                     episode.data.rewards[0,t]=reward
-                    t+=1
                     ep_reward+=reward
                     envTerminated=False
                     if terminated and not info.get("episode_limit", False):
                         envTerminated=True
                     episode.data.terminated[0,t]=envTerminated
+                    t+=1
                     episode.data.mask[0,t]=1
+                    episode.data.obs[0,t] = torch.tensor(np.array(sc_env.get_obs()),device=device)
+                    episode.data.states[0,t]=torch.tensor(sc_env.get_state(),device=device)
+                    episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                 buf.addEpisode(episode)
                 won=False
                 if info.get("battle_won", False):

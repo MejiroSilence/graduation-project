@@ -22,10 +22,11 @@ def train(args):
     localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
     with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
         file.write("seed: {}\n".format(seed)) 
+        file.write("mixer: {}\n".format(args.mixer)) 
     x=[]
     y=[]
 
-    sc_env = StarCraft2Env()
+    sc_env = StarCraft2Env(reward_win=50)
     env_info = sc_env.get_env_info()
     args.agentNum=env_info["n_agents"]
     args.observeDim=env_info["obs_shape"]

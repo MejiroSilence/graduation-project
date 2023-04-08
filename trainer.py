@@ -1,4 +1,4 @@
-from mixer import qpair
+from mixer import qpair,qscan
 from critic import Qnet
 import torch
 import torch.nn as nn
@@ -19,8 +19,12 @@ class trainer(object):
         self.args=args
         self.evalCritic=Qnet(2*args.agentNum*args.actionNum+args.stateDim+args.observeDim+args.agentNum,args.criticHiddenDim,args.actionNum).cuda()
         self.targetCritic=Qnet(2*args.agentNum*args.actionNum+args.stateDim+args.observeDim+args.agentNum,args.criticHiddenDim,args.actionNum).cuda()
-        self.evalMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum,args.actionNum).cuda()
-        self.targetMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum,args.actionNum).cuda()
+        if args.mixer=="qpair":
+            self.evalMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum,args.actionNum).cuda()
+            self.targetMixer=qpair(args.stateDim,args.mixerHiddenDim,args.agentNum,args.actionNum).cuda()
+        elif args.mixer=="qscan":
+            self.evalMixer=qscan(args).cuda()
+            self.targetMixer=qscan(args).cuda()
         self.criticParam=list(self.evalCritic.parameters())+list(self.evalMixer.parameters())
         hardUpdate(self.targetCritic,self.evalCritic)
         hardUpdate(self.targetMixer,self.evalMixer)

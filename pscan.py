@@ -21,9 +21,9 @@ class pscan(object):
 
         #q = q/max(q.max(),abs(q.min()))
 
-        q = torch.nn.functional.softmax(q, dim=-1)
+        q = torch.nn.functional.log_softmax(q, dim=-1)
             
-        return q.view(batch.batchSize, self.n_agents, -1)
+        return q.view(batch.batchSize, self.n_agents, -1).exp()
 
     def chooseActions(self,batch,t,t_env):
         probs=self.forward(batch,t)

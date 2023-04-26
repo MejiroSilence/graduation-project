@@ -19,11 +19,13 @@ class pscan(object):
         inputs=self.buildInput(batch,t)
         q, self.hs = self.agent(inputs, self.hs)
 
-        #q = q/max(q.max(),abs(q.min()))
+        with torch.no_grad():
+            maxq=q.max()
+        q = q-maxq
 
-        q = torch.nn.functional.log_softmax(q, dim=-1)
+        q = torch.nn.functional.softmax(q, dim=-1)
             
-        return q.view(batch.batchSize, self.n_agents, -1).exp()
+        return q.view(batch.batchSize, self.n_agents, -1)
 
     def chooseActions(self,batch,t,t_env):
         probs=self.forward(batch,t)

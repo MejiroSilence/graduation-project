@@ -23,10 +23,11 @@ def train(args):
     with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
         file.write("seed: {}\n".format(seed)) 
         file.write("mixer: {}\n".format(args.mixer)) 
+        file.write("map: {}\n".format(args.map)) 
     x=[]
     y=[]
 
-    sc_env = StarCraft2Env(reward_win=50)
+    sc_env = StarCraft2Env(map_name=args.map)#,reward_win=50
     env_info = sc_env.get_env_info()
     args.agentNum=env_info["n_agents"]
     args.observeDim=env_info["obs_shape"]

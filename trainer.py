@@ -118,7 +118,7 @@ class trainer(object):
         q_taken = torch.gather(q_vals, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
         pi_taken = torch.gather(pi, dim=1, index=actions.reshape(-1, 1)).squeeze(1)
         #pi_taken[mask == 0] = 1.0
-        log_pi_taken = torch.log(pi_taken)
+        #log_pi_taken = torch.log(pi_taken)
 
         advantages = (q_taken - baseline).detach()
 
@@ -141,8 +141,8 @@ class trainer(object):
         nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
         self.actorOpt.step()
 
-        hardUpdate(self.targetCritic,self.evalCritic)
-        hardUpdate(self.targetMixer,self.evalMixer)
+        softUpdate(self.targetCritic,self.evalCritic,self.tau)
+        softUpdate(self.targetMixer,self.evalMixer,self.tau)
 
 
             

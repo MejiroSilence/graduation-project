@@ -27,5 +27,6 @@ if __name__ == '__main__':
     parser.add_argument('--nhead',default=8,type=int)
     parser.add_argument('--attentionLayer',default=4,type=int)
     parser.add_argument('--mixer',default="qpair",type=str)
+    parser.add_argument('--map',default="8m",type=str)
     args=parser.parse_args()
     train(args)

@@ -31,12 +31,15 @@ class pscan(object):
         probs=self.forward(batch,t)
         availableActions=batch.data.availableActions[:,t]
         probs=probs*availableActions
+        probs=probs/(probs.sum(dim=-1,keepdim=True)+1e-8)
         probs=probs/probs.sum(dim=-1,keepdim=True)
         e=self.epi_scheduler.eval(t_env)
-        if np.random.uniform() > e:
-            pickedActions = torch.distributions.Categorical(probs).sample().long()
-        else:
-            pickedActions=torch.distributions.Categorical(availableActions).sample().long()
+        random_numbers = torch.rand_like(probs[:, :, 0])
+        pick_random = (random_numbers < e).long()
+        randPick=torch.distributions.Categorical(availableActions).sample().long()
+        polocyPick=pickedActions = torch.distributions.Categorical(probs).sample().long()
+
+        pickedActions=pick_random*randPick+(1-pick_random)*polocyPick
 
         return pickedActions,probs.gather(-1,pickedActions.unsqueeze(-1)).squeeze(-1)
 

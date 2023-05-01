@@ -73,7 +73,7 @@ class trainer(object):
             loss = (masked_td_error ** 2).sum() / mask_t.sum()
             self.criticOpt.zero_grad()
             loss.backward()
-            grad_norm = nn.utils.clip_grad_norm_(self.criticParam,max_norm=10, norm_type=2)
+            nn.utils.clip_grad_norm_(self.criticParam,max_norm=10, norm_type=2)
             self.criticOpt.step()
 
         return q_vals
@@ -122,11 +122,13 @@ class trainer(object):
 
         advantages = (q_taken - baseline).detach()
 
-        probRatio = pi_taken/oldprobs
+        probRatio = pi_taken/(oldprobs + 1e-10)
         weightedAdvantages=advantages*probRatio
         weightedClippedProbs=torch.clamp(probRatio,1-self.args.clip,1+self.args.clip)*advantages
 
         loss=-torch.min(weightedAdvantages,weightedClippedProbs).mean()
+
+        print("actorLoss: ",loss)
 
         #coma_loss = - (advantages * log_pi_taken).sum() / mask.sum()
 
@@ -138,7 +140,10 @@ class trainer(object):
         self.actorOpt.zero_grad()
         #loss = coma_loss #- self.args.entropy * entropy_loss
         loss.backward()
-        nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
+        clip=nn.utils.clip_grad_norm_(self.mac.actorParam,max_norm=10, norm_type=2)
+
+        print("actorClip: ",clip)
+
         self.actorOpt.step()
 
         softUpdate(self.targetCritic,self.evalCritic,self.tau)

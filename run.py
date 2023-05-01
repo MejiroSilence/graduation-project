@@ -40,7 +40,6 @@ def train(args):
     epoch_i=0
     t_env=0
     while epoch_i<args.epoch:
-        winCnt=0
         with torch.no_grad():
             for episode_i in range(args.epochEpisodes):
                 t=0
@@ -71,22 +70,52 @@ def train(args):
                     episode.data.states[0,t]=torch.tensor(sc_env.get_state(),device=device)
                     episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                 buf.addEpisode(episode)
+                t_env+=t
                 won=False
                 if info.get("battle_won", False):
-                    winCnt+=1
                     won=True
-                t_env+=t
+                
                 print("episode: {}, steps: {}, total reward: {}, won: {}".format(epoch_i+episode_i,t,ep_reward,won))
         epoch_i+=args.epochEpisodes
         train=buf.canSample(args.sampleSize)
         if train:
             sampledData=buf.sample(args.sampleSize)
             epochTrainer.train(sampledData)
-        wr=winCnt/args.epochEpisodes
-        x.append(epoch_i)
-        y.append(wr)
-        with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
-            file.write("{}    {}\n".format(epoch_i+1,wr)) 
+
+        #test
+        if epoch_i % 128 == 0:
+            winCnt=0
+            with torch.no_grad():
+                for i in range(100):
+                    t=0
+                    ep_reward=0
+                    sc_env.reset()
+                    terminated = False
+                    mac.initHidden(1)
+                    episode=buffer(1,args)
+                    episode.data.obs[0,0] = torch.tensor(np.array(sc_env.get_obs()),device=device)
+                    episode.data.availableActions[0,0]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
+                    while not terminated: 
+                        actions,probs=mac.chooseActions(episode,t,0,True)
+                        reward, terminated, info = sc_env.step(actions.reshape(-1))
+                        episode.data.actionsOnehot[0,t]=oneHotTransform(actions.reshape(-1,1),args.actionNum)
+                        ep_reward+=reward
+                        t+=1
+                        episode.data.obs[0,t] = torch.tensor(np.array(sc_env.get_obs()),device=device)
+                        episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
+                    won=False
+                    if info.get("battle_won", False):
+                        winCnt+=1
+                        won=True
+                    print("test: {}, steps: {}, total reward: {}, won: {}".format(i,t,ep_reward,won))
+
+            wr=winCnt/100
+            x.append(epoch_i)
+            y.append(wr)
+            with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
+                file.write("{}    {}\n".format(epoch_i+1,wr))
+
+                
     plt.plot(x,y)
     plt.savefig('./results/pscan{}.jpg'.format(localtime))
 

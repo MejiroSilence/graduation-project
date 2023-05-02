@@ -1,4 +1,4 @@
-from mixer import qpair,qscan
+from mixer import *
 from critic import Qnet
 import torch
 import torch.nn as nn
@@ -25,6 +25,9 @@ class trainer(object):
         elif args.mixer=="qscan":
             self.evalMixer=qscan(args).cuda()
             self.targetMixer=qscan(args).cuda()
+        elif args.mixer=="qmix":
+            self.evalMixer=qmix(args).cuda()
+            self.targetMixer=qmix(args).cuda()
         self.criticParam=list(self.evalCritic.parameters())+list(self.evalMixer.parameters())
         hardUpdate(self.targetCritic,self.evalCritic)
         hardUpdate(self.targetMixer,self.evalMixer)
@@ -43,11 +46,15 @@ class trainer(object):
     
     def _train_critic(self, batch, rewards, terminated, actions, mask, bs):
         target_q_vals = self.targetCritic(batch,self.n_agents,self.actionNum)
-        targrtLabmda=self.targetMixer(batch)
-        targrtQTot=self.getQtotal(target_q_vals,actions,targrtLabmda)
+        if self.args.mixer=="qmix":
+            taken = torch.gather(target_q_vals, dim=3, index=actions.unsqueeze(-1)).squeeze(3)
+            targetQTot=self.targetMixer(taken,batch.data.states).squeeze(-1)
+        else:
+            targetLabmda=self.targetMixer(batch)
+            targetQTot=self.getQtotal(target_q_vals,actions,targetLabmda)
 
         # Calculate td-lambda targets
-        targets = build_td_lambda_targets(rewards, terminated, mask, targrtQTot, self.args.gamma, self.args.td_lambda)
+        targets = build_td_lambda_targets(rewards, terminated, mask, targetQTot, self.args.gamma, self.args.td_lambda)
 
         q_vals = torch.zeros_like(target_q_vals)[:,:-1]
 
@@ -59,8 +66,12 @@ class trainer(object):
 
             q_t = self.evalCritic(batch,self.n_agents,self.actionNum, t)
             q_vals[:, t] = q_t.view(bs, self.n_agents, self.actionNum)
-            lambda_t=self.evalMixer(batch,t)
-            evalQTot=self.getQtotal(q_t,actions[:,t].unsqueeze(1),lambda_t).reshape(-1)
+            if self.args.mixer=="qmix":
+                taken = torch.gather(q_t, dim=3, index=actions[:,t].view(bs,1,-1,1)).squeeze(3)
+                evalQTot=self.evalMixer(taken,batch.data.states[:,t]).reshape(-1)
+            else:
+                lambda_t=self.evalMixer(batch,t)
+                evalQTot=self.getQtotal(q_t,actions[:,t].unsqueeze(1),lambda_t).reshape(-1)
 
             targets_t = targets[:, t]
 

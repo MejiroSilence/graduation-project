@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import time
 import random
 import sys
+from rl_plotter.logger import Logger
 
 
 print("cuda status: ",torch.cuda.is_available())
@@ -24,8 +25,9 @@ def train(args):
         file.write("seed: {}\n".format(seed)) 
         file.write("mixer: {}\n".format(args.mixer)) 
         file.write("map: {}\n".format(args.map)) 
-    x=[]
-    y=[]
+
+    logger = Logger(exp_name="coma+"+args.mixer, env_name=args.map,filename="r.csv")
+    custom_logger=logger.new_custom_logger("wr.csv",fieldnames=["wr","episode"])
 
     sc_env = StarCraft2Env(map_name=args.map)#,reward_win=50
     env_info = sc_env.get_env_info()
@@ -85,6 +87,7 @@ def train(args):
         #test
         if epoch_i % 128 == 0:
             winCnt=0
+            testRewards=[]
             with torch.no_grad():
                 for i in range(100):
                     t=0
@@ -107,17 +110,15 @@ def train(args):
                     if info.get("battle_won", False):
                         winCnt+=1
                         won=True
+                    testRewards.append(ep_reward)
                     print("test: {}, steps: {}, total reward: {}, won: {}".format(i,t,ep_reward,won))
 
             wr=winCnt/100
-            x.append(epoch_i)
-            y.append(wr)
             with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
-                file.write("{}    {}\n".format(epoch_i+1,wr))
-
-                
-    plt.plot(x,y)
-    plt.savefig('./results/pscan{}.jpg'.format(localtime))
+                file.write("{}    {}\n".format(epoch_i,wr))
+            logger.update(testRewards,epoch_i)
+            custom_logger.update([wr,epoch_i],t_env)
+    
 
 
 

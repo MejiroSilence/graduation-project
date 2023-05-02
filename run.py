@@ -20,14 +20,15 @@ torch.cuda.manual_seed_all(seed)
 
 def train(args):
     #plt
-    localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
-    with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
-        file.write("seed: {}\n".format(seed)) 
-        file.write("mixer: {}\n".format(args.mixer)) 
-        file.write("map: {}\n".format(args.map)) 
+    if not args.debug:
+        localtime = time.strftime("%Y-%m-%d_%H:%M:%S", time.localtime())
+        with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
+            file.write("seed: {}\n".format(seed)) 
+            file.write("mixer: {}\n".format(args.mixer)) 
+            file.write("map: {}\n".format(args.map)) 
 
-    logger = Logger(exp_name="coma+"+args.mixer, env_name=args.map,filename="r.csv")
-    custom_logger=logger.new_custom_logger("wr.csv",fieldnames=["wr","episode"])
+        logger = Logger(exp_name="coma+"+args.mixer, env_name=args.map,filename="r.csv")
+        custom_logger=logger.new_custom_logger("wr.csv",fieldnames=["wr","episode"])
 
     sc_env = StarCraft2Env(map_name=args.map)#,reward_win=50
     env_info = sc_env.get_env_info()
@@ -37,7 +38,7 @@ def train(args):
     args.stateDim=env_info["state_shape"]
     args.maxSteps=env_info["episode_limit"]
     mac = pscan(args)
-    buf=buffer(args.batchSize,args)
+    buf=buffer(args.batchSize,args,"cpu")
     epochTrainer=trainer(mac,args)
     epoch_i=0
     t_env=0
@@ -81,7 +82,7 @@ def train(args):
         epoch_i+=args.epochEpisodes
         train=buf.canSample(args.sampleSize)
         if train:
-            sampledData=buf.sample(args.sampleSize)
+            sampledData=buf.sample(args.sampleSize,"cuda")
             epochTrainer.train(sampledData)
 
         #test
@@ -114,10 +115,11 @@ def train(args):
                     print("test: {}, steps: {}, total reward: {}, won: {}".format(i,t,ep_reward,won))
 
             wr=winCnt/100
-            with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
-                file.write("{}    {}\n".format(epoch_i,wr))
-            logger.update(testRewards,epoch_i)
-            custom_logger.update([wr,epoch_i],t_env)
+            if not args.debug:
+                with open("./results/pscan{}.txt".format(localtime), encoding="utf-8",mode="a") as file:  
+                    file.write("{}    {}\n".format(epoch_i,wr))
+                logger.update(testRewards,epoch_i)
+                custom_logger.update([wr,epoch_i],t_env)
     
 
 

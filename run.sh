@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=2 python main.py --map=3m --epsilonAnnealTime=50000
+CUDA_VISIBLE_DEVICES=3 python main.py --map=2s3z

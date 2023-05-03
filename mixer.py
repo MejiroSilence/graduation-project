@@ -17,7 +17,7 @@ class qpair(nn.Module):
             nn.Linear(hiddenSize, hiddenSize),
             nn.LeakyReLU(),
             nn.Linear(hiddenSize, 2),
-            nn.Softmax(dim=-1)
+            #nn.Softmax(dim=-1)
         )
         self.comb=torch.tensor(list(combinations([i for i in range(agentNum)],2)),device=device)
         self.comb0=self.comb[:,0].unsqueeze(-1)
@@ -33,10 +33,14 @@ class qpair(nn.Module):
                 if i==j:
                     continue
                 if i<j:
-                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-i)*i/2+j-i-1),0]
+                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-i)*i/2+j-i-1),0].abs()
                 else:
-                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-j)*j/2+i-j-1),1]
-        lambda_=lambda_*2/(self.agentNum-1)
+                    lambda_[:,:,i]+=outs[:,:,int((2*self.agentNum-1-j)*j/2+i-j-1),1].abs()
+        with torch.no_grad():
+            mean=lambda_.mean(dim=-1,keepdim=True)
+        lambda_=lambda_/mean
+        #lambda_=lambda_*2/(self.agentNum-1)
+        #lambda_= torch.abs(lambda_)
         return lambda_
 
     

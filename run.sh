@@ -1,1 +1,1 @@
-CUDA_VISIBLE_DEVICES=3 python main.py --map=2s3z
+CUDA_VISIBLE_DEVICES=0 python main.py --map=2s3z --mixer=qpair

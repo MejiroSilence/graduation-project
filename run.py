@@ -73,6 +73,7 @@ def train(args):
                     episode.data.states[0,t]=torch.tensor(sc_env.get_state(),device=device)
                     episode.data.availableActions[0,t]=torch.tensor(np.array(sc_env.get_avail_actions()),device=device)
                 buf.addEpisode(episode)
+                del episode
                 t_env+=t
                 won=False
                 if info.get("battle_won", False):
@@ -84,6 +85,7 @@ def train(args):
         if train:
             sampledData=buf.sample(args.sampleSize,"cuda")
             epochTrainer.train(sampledData)
+            del sampledData
 
         #test
         if epoch_i % 128 == 0:

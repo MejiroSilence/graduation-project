@@ -28,6 +28,9 @@ class trainer(object):
         elif args.mixer=="qmix":
             self.evalMixer=qmix(args).cuda()
             self.targetMixer=qmix(args).cuda()
+        elif args.mixer=="qpair_fix":
+            self.evalMixer=qpair_fix(args.stateDim,64,args.agentNum,args.actionNum).cuda()
+            self.targetMixer=qpair_fix(args.stateDim,64,args.agentNum,args.actionNum).cuda()            
         self.criticParam=list(self.evalCritic.parameters())+list(self.evalMixer.parameters())
         hardUpdate(self.targetCritic,self.evalCritic)
         hardUpdate(self.targetMixer,self.evalMixer)
@@ -42,6 +45,9 @@ class trainer(object):
         mixedA=lambda_*a
         aTotal=torch.sum(mixedA,dim=2)
         qTotal=aTotal+vTotal
+        qTotal=lambda_*taken
+        qTotal=qTotal.sum(dim=-1)
+
         return qTotal
     
     def _train_critic(self, batch, rewards, terminated, actions, mask, bs):
@@ -49,6 +55,9 @@ class trainer(object):
         if self.args.mixer=="qmix":
             taken = torch.gather(target_q_vals, dim=3, index=actions.unsqueeze(-1)).squeeze(3)
             targetQTot=self.targetMixer(taken,batch.data.states).squeeze(-1)
+        elif self.args.mixer=="qpair_fix":
+            taken = torch.gather(target_q_vals, dim=3, index=actions.unsqueeze(-1)).squeeze(3)
+            targetQTot=self.targetMixer(batch,taken).squeeze(-1)
         else:
             targetLabmda=self.targetMixer(batch)
             targetQTot=self.getQtotal(target_q_vals,actions,targetLabmda)
@@ -69,6 +78,9 @@ class trainer(object):
             if self.args.mixer=="qmix":
                 taken = torch.gather(q_t, dim=3, index=actions[:,t].view(bs,1,-1,1)).squeeze(3)
                 evalQTot=self.evalMixer(taken,batch.data.states[:,t]).reshape(-1)
+            elif self.args.mixer=="qpair_fix":
+                taken = torch.gather(q_t, dim=3, index=actions[:,t].view(bs,1,-1,1)).squeeze(3)
+                evalQTot=self.evalMixer(batch,taken,t).reshape(-1)
             else:
                 lambda_t=self.evalMixer(batch,t)
                 evalQTot=self.getQtotal(q_t,actions[:,t].unsqueeze(1),lambda_t).reshape(-1)
